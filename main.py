@@ -24,14 +24,24 @@ def haversine(lat1, lon1, lat2, lon2):
     distance = R * c
     return distance
 
-def assign_orders_to_couriers_optimized(orders, couriers):
+
+def assign_orders_to_couriers_optimized(orders, couriers, max_distance_threshold=10.0,
+                                        count_increase_for_distant_couriers=2):
     for order in orders:
         # Находим свободных курьеров
         available_couriers = [courier for courier in couriers if not courier.busy]
 
         if available_couriers:
             # Если есть свободные курьеры, выбираем того, который ближе всего к точке отправления заказа
-            closest_courier = min(available_couriers, key=lambda x: haversine(order.from_location[0], order.from_location[1], x.location[0], x.location[1]))
+            closest_courier = min(available_couriers,
+                                  key=lambda x: haversine(order.from_location[0], order.from_location[1], x.location[0],
+                                                          x.location[1]))
+
+            # Проверяем, превышает ли расстояние пороговое значение
+            if haversine(order.from_location[0], order.from_location[1], closest_courier.location[0],
+                         closest_courier.location[1]) > max_distance_threshold:
+                # Если превышает, увеличиваем каунт на count_increase_for_distant_couriers
+                closest_courier.count += count_increase_for_distant_couriers
         else:
             # Если все курьеры заняты, выбираем того, у которого наименьший каунт
             closest_courier = min(couriers, key=lambda x: x.count)
@@ -42,7 +52,9 @@ def assign_orders_to_couriers_optimized(orders, couriers):
         closest_courier.location = order.to_location
 
         # Выводим информацию о назначении
-        print(f"Order {order.order_id, order.from_location, order.to_location, order.price} assigned to Courier {closest_courier.courier_id, closest_courier.location}")
+        print(
+            f"Order {order.order_id, order.from_location, order.to_location, order.price} assigned to Courier {closest_courier.courier_id, closest_courier.location}")
+
 # Списки
 orders = [
     Order(1, (55.7558, 37.6176), (55.7517, 37.6184), 500),
@@ -58,7 +70,7 @@ orders = [
 ]
 
 couriers = [
-    Courier(101, (55.7558, 37.6176)),
+    Courier(101, (54.7558, 36.6176)),
     Courier(102, (55.7517, 37.6184)),
     Courier(103, (55.7537, 37.6180)),
     Courier(104, (55.8522, 37.6120)),
